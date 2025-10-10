@@ -1,18 +1,27 @@
 from flask import Flask, request, redirect, url_for, render_template, send_from_directory, session
-import os, shutil, sqlite3
+import os, shutil
 from functools import wraps
+import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.utils import secure_filename
+from flask.sessions import SecureCookieSessionInterface
 
+# --- FIX Flask 2.3+ partitioned bug ---
+class FixedSessionInterface(SecureCookieSessionInterface):
+    def save_session(self, *args, **kwargs):
+        if 'partitioned' in kwargs:
+            kwargs.pop('partitioned')
+        super().save_session(*args, **kwargs)
+
+# --- APP ---
 app = Flask(__name__)
-app.secret_key = 'KDBgslTehdzZAfBOTkj1EwB3vezP6QPf'
+app.secret_key = 'una_chiave_segretissima'
+app.session_interface = FixedSessionInterface()  # applica il fix
+
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# -----------------------
-# Decoratore login
-# -----------------------
+# --- DECORATOR LOGIN REQUIRED ---
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -21,39 +30,29 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated
 
-# -----------------------
-# Utility per percorsi
-# -----------------------
-def get_abs_path(subpath=None):
-    """Restituisce percorso assoluto della cartella root o sottocartella."""
-    if not subpath or subpath.strip() == "":
-        return os.path.abspath(UPLOAD_FOLDER)
-    return os.path.abspath(os.path.join(UPLOAD_FOLDER, subpath))
-
-# -----------------------
-# LOGIN
-# -----------------------
+# --- LOGIN ---
 @app.route('/')
 def home():
     return redirect(url_for('login'))
 
 @app.route('/login', methods=['GET','POST'])
 def login():
-    error = None
-    if request.method == 'POST':
-        username = request.form['username'].strip()
-        password = request.form['password'].strip()
+    error=None
+    if request.method=='POST':
+        username = request.form['username']
+        password = request.form['password']
         conn = sqlite3.connect('users.db')
         c = conn.cursor()
-        c.execute('SELECT password_hash FROM users WHERE username=?', (username,))
+        c.execute('SELECT password_hash, is_admin FROM users WHERE username=?', (username,))
         res = c.fetchone()
         conn.close()
         if res and check_password_hash(res[0], password):
-            session['logged_in'] = True
-            session['username'] = username
+            session['logged_in']=True
+            session['username']=username
+            session['is_admin'] = bool(res[1])
             return redirect(url_for('index'))
         else:
-            error = "Username o password sbagliati"
+            error="Username o password sbagliati"
     return render_template('login.html', error=error)
 
 @app.route('/logout')
@@ -62,181 +61,126 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
-# -----------------------
-# Pagina principale (root)
-# -----------------------
+# --- FILES & CARTELLE ---
 @app.route('/files')
 @login_required
 def index():
-    base_path = get_abs_path()
-    items = []
-    for item in os.listdir(base_path):
-        full_path = os.path.join(base_path, item)
-        item_type = 'folder' if os.path.isdir(full_path) else 'file'
-        items.append({'name': item, 'type': item_type})
-    return render_template('folder.html', items=items, current_path='')
+    folders = [f for f in os.listdir(UPLOAD_FOLDER) if os.path.isdir(os.path.join(UPLOAD_FOLDER, f))]
+    return render_template('index.html', folders=folders, admin=session.get('is_admin', False))
 
-# -----------------------
-# Sottocartelle e files
-# -----------------------
-@app.route('/folder/<path:subpath>', methods=['GET','POST'])
+@app.route('/folder/<path:folder_path>', methods=['GET','POST'])
 @login_required
-def view_folder(subpath):
-    abs_path = get_abs_path(subpath)
-    os.makedirs(abs_path, exist_ok=True)
+def view_folder(folder_path):
+    folder_full_path = os.path.join(UPLOAD_FOLDER, folder_path)
+    os.makedirs(folder_full_path, exist_ok=True)
 
-    if request.method == 'POST':
+    # Upload files via drag & drop
+    if request.method=='POST':
         for file in request.files.getlist('file'):
             if file:
-                filename = secure_filename(file.filename)
-                file.save(os.path.join(abs_path, filename))
-        return redirect(url_for('view_folder', subpath=subpath))
+                file.save(os.path.join(folder_full_path, file.filename))
+        return redirect(url_for('view_folder', folder_path=folder_path))
 
+    # Lista file e cartelle
     items = []
-    for item in os.listdir(abs_path):
-        full_path = os.path.join(abs_path, item)
-        item_type = 'folder' if os.path.isdir(full_path) else 'file'
-        items.append({'name': item, 'type': item_type})
+    for f in os.listdir(folder_full_path):
+        path = os.path.join(folder_full_path, f)
+        items.append({
+            'name': f,
+            'type': 'folder' if os.path.isdir(path) else 'file'
+        })
 
-    return render_template('folder.html', items=items, current_path=subpath)
+    return render_template('folder.html', items=items, current_path=folder_path)
 
-# -----------------------
-# Creazione cartella
-# -----------------------
-@app.route('/create_folder', methods=['POST'])
+# --- CREATE / RENAME / DELETE ---
+@app.route('/create_folder', defaults={'folder_path':''}, methods=['POST'])
+@app.route('/create_folder/<path:folder_path>', methods=['POST'])
 @login_required
-def create_root_folder():
-    folder_name = request.form.get('folder_name', '').strip()
-    abs_path = get_abs_path()
-    if folder_name:
-        os.makedirs(os.path.join(abs_path, secure_filename(folder_name)), exist_ok=True)
-    return ('', 204)
+def create_folder(folder_path):
+    name = request.form['folder_name'].strip()
+    if name:
+        path = os.path.join(UPLOAD_FOLDER, folder_path, name)
+        os.makedirs(path, exist_ok=True)
+    return ('',204)
 
-@app.route('/create_folder/<path:subpath>', methods=['POST'])
+@app.route('/rename_folder/<path:folder_path>', methods=['POST'])
 @login_required
-def create_folder(subpath):
-    folder_name = request.form.get('folder_name', '').strip()
-    abs_path = get_abs_path(subpath)
-    if folder_name:
-        os.makedirs(os.path.join(abs_path, secure_filename(folder_name)), exist_ok=True)
-    return ('', 204)
-
-# -----------------------
-# Rinomina cartella
-# -----------------------
-@app.route('/rename_folder', methods=['POST'])
-@login_required
-def rename_root_folder():
-    old = request.form.get('old_name', '').strip()
-    new = request.form.get('new_name', '').strip()
-    abs_path = get_abs_path()
-    old_path = os.path.join(abs_path, old)
-    new_path = os.path.join(abs_path, secure_filename(new))
+def rename_folder(folder_path):
+    old = request.form['old_name'].strip()
+    new = request.form['new_name'].strip()
+    old_path = os.path.join(UPLOAD_FOLDER, folder_path, old)
+    new_path = os.path.join(UPLOAD_FOLDER, folder_path, new)
     if os.path.exists(old_path) and new:
         os.rename(old_path, new_path)
-    return ('', 204)
+    return ('',204)
 
-@app.route('/rename_folder/<path:subpath>', methods=['POST'])
+@app.route('/delete_folder/<path:folder_path>', methods=['POST'])
 @login_required
-def rename_folder(subpath):
+def delete_folder(folder_path):
+    folder_name = request.form['folder_name'].strip()
+    path = os.path.join(UPLOAD_FOLDER, folder_path, folder_name)
+    if os.path.exists(path):
+        shutil.rmtree(path)
+    return ('',204)
+
+@app.route('/rename_file/<path:folder_path>', methods=['POST'])
+@login_required
+def rename_file(folder_path):
     old = request.form.get('old_name', '').strip()
     new = request.form.get('new_name', '').strip()
-    abs_path = get_abs_path(subpath)
-    old_path = os.path.join(abs_path, old)
-    new_path = os.path.join(abs_path, secure_filename(new))
+    folder_full_path = os.path.join(UPLOAD_FOLDER, folder_path)
+    old_path = os.path.join(folder_full_path, old)
+    new_path = os.path.join(folder_full_path, new)
     if os.path.exists(old_path) and new:
         os.rename(old_path, new_path)
-    return ('', 204)
+        return ('',204)
+    return ('File non valido', 400)
 
-# -----------------------
-# Elimina cartella
-# -----------------------
-@app.route('/delete_folder', methods=['POST'])
+@app.route('/delete_file/<path:folder_path>', methods=['POST'])
 @login_required
-def delete_root_folder():
-    folder_name = request.form.get('folder_name', '').strip()
-    abs_path = get_abs_path()
-    folder_path = os.path.join(abs_path, folder_name)
-    if os.path.exists(folder_path):
-        shutil.rmtree(folder_path)
-    return ('', 204)
-
-@app.route('/delete_folder/<path:subpath>', methods=['POST'])
-@login_required
-def delete_folder(subpath):
-    folder_name = request.form.get('folder_name', '').strip()
-    abs_path = get_abs_path(subpath)
-    folder_path = os.path.join(abs_path, folder_name)
-    if os.path.exists(folder_path):
-        shutil.rmtree(folder_path)
-    return ('', 204)
-
-# -----------------------
-# Rinomina file
-# -----------------------
-@app.route('/rename_file', methods=['POST'])
-@login_required
-def rename_root_file():
-    old = request.form.get('old_name', '').strip()
-    new = request.form.get('new_name', '').strip()
-    abs_path = get_abs_path()
-    old_path = os.path.join(abs_path, old)
-    new_path = os.path.join(abs_path, secure_filename(new))
-    if os.path.exists(old_path) and new:
-        os.rename(old_path, new_path)
-    return ('', 204)
-
-@app.route('/rename_file/<path:subpath>', methods=['POST'])
-@login_required
-def rename_file(subpath):
-    old = request.form.get('old_name', '').strip()
-    new = request.form.get('new_name', '').strip()
-    abs_path = get_abs_path(subpath)
-    old_path = os.path.join(abs_path, old)
-    new_path = os.path.join(abs_path, secure_filename(new))
-    if os.path.exists(old_path) and new:
-        os.rename(old_path, new_path)
-    return ('', 204)
-
-# -----------------------
-# Elimina file
-# -----------------------
-@app.route('/delete_file', methods=['POST'])
-@login_required
-def delete_root_file():
-    file_name = request.form.get('file_name', '').strip()
-    abs_path = get_abs_path()
-    file_path = os.path.join(abs_path, file_name)
+def delete_file(folder_path):
+    file_name = request.form['file_name'].strip()
+    file_path = os.path.join(UPLOAD_FOLDER, folder_path, file_name)
     if os.path.exists(file_path):
         os.remove(file_path)
-    return ('', 204)
+    return ('',204)
 
-@app.route('/delete_file/<path:subpath>', methods=['POST'])
+@app.route('/uploads/<path:file_path>')
 @login_required
-def delete_file(subpath):
-    file_name = request.form.get('file_name', '').strip()
-    abs_path = get_abs_path(subpath)
-    file_path = os.path.join(abs_path, file_name)
-    if os.path.exists(file_path):
-        os.remove(file_path)
-    return ('', 204)
+def uploaded_file(file_path):
+    folder_path, filename = os.path.split(file_path)
+    return send_from_directory(os.path.join(UPLOAD_FOLDER, folder_path), filename, as_attachment=True)
 
-# -----------------------
-# Download / Anteprima file
-# -----------------------
-@app.route('/uploads/<path:filename>')
+# --- ADMIN USER MANAGEMENT ---
+@app.route('/manage_users')
 @login_required
-def uploaded_file(filename):
-    abs_path = get_abs_path(os.path.dirname(filename))
-    file_name = os.path.basename(filename)
-    return send_from_directory(abs_path, file_name, as_attachment=False)
+def manage_users():
+    if not session.get('is_admin'):
+        return redirect(url_for('index'))
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    c.execute("SELECT username, is_admin FROM users")
+    users = [{"username": row[0], "is_admin": row[1]} for row in c.fetchall()]
+    conn.close()
+    return render_template('manage_users.html', users=users)
 
-# -----------------------
-# Avvio app
-# -----------------------
-import os
 
-if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))  # Render fornisce la porta via variabile d'ambiente
-    app.run(host='0.0.0.0', port=port, debug=True)
+@app.route('/create_user', methods=['POST'])
+@login_required
+def create_user():
+    if not session.get('is_admin'):
+        return ('',403)
+    username = request.form.get('username', '').strip()
+    password = request.form.get('password', '').strip()
+    if username and password:
+        conn = sqlite3.connect('users.db')
+        c = conn.cursor()
+        password_hash = generate_password_hash(password)
+        c.execute('INSERT INTO users (username,password_hash,is_admin) VALUES (?,?,0)', (username,password_hash))
+        conn.commit()
+        conn.close()
+    return redirect(url_for('manage_users'))
 
+
+if __name__=='__main__':
+    app.run(debug=True)

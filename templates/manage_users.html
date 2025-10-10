@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Gestione Utenti</title>
+    <style>
+      body {
+        background: #000;
+        color: #3399ff;
+        font-family: "Courier New", monospace;
+        padding: 20px;
+      }
+      .navbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+      a {
+        color: #3399ff;
+        text-decoration: none;
+        font-weight: bold;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+      th,
+      td {
+        padding: 10px;
+        border: 1px solid #3399ff;
+        text-align: left;
+      }
+      button {
+        background: #3399ff;
+        color: #000;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #66b3ff;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="navbar">
+      <h1>Gestione Utenti</h1>
+      <a href="{{ url_for('logout') }}">Logout</a>
+    </div>
+    <button id="add-user">+ Nuovo utente</button>
+    <table>
+      <thead>
+        <tr>
+          <th>Nome Utente</th>
+          <th>Amministratore</th>
+        </tr>
+      </thead>
+      <tbody id="user-list">
+        {% for user in users %}
+        <tr>
+          <td>{{ user.username }}</td>
+          <td>{{ "Sì" if user.is_admin else "No" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <script>
+      document.getElementById("add-user").addEventListener("click", () => {
+        const username = prompt("Inserisci nome utente:");
+        const password = prompt("Inserisci password:");
+        if (username && password) {
+          fetch("/create_user", {
+            // <- deve corrispondere al route Flask
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: `username=${encodeURIComponent(
+              username
+            )}&password=${encodeURIComponent(password)}`,
+          })
+            .then((res) => res.text())
+            .then(() => location.reload());
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -27,6 +27,7 @@
         color: #3399ff;
         text-decoration: none;
         font-weight: bold;
+        cursor: pointer;
       }
       .container {
         padding: 20px;
@@ -52,98 +53,35 @@
       .folder:hover {
         box-shadow: 0 5px 15px rgba(51, 153, 255, 0.4);
       }
-      .context-menu {
-        position: absolute;
-        background: #111;
-        border: 1px solid #3399ff;
-        border-radius: 10px;
-        display: none;
-        flex-direction: column;
-        min-width: 150px;
-        z-index: 1000;
-      }
-      .context-menu div {
-        padding: 10px;
-        cursor: pointer;
-        color: #3399ff;
-      }
-      .context-menu div:hover {
-        background: #222;
-      }
-      .inline-input {
-        width: 100%;
-        border: none;
-        background: #222;
-        color: #3399ff;
-        border-radius: 5px;
-        padding: 3px;
-        font-size: 0.9rem;
-      }
     </style>
   </head>
   <body>
     <div class="navbar">
       <h1>Gestionale</h1>
-      <a href="{{ url_for('logout') }}">Logout</a>
+      <div>
+        {% if admin %}
+        <a href="{{ url_for('manage_users') }}">Gestione utenti</a>
+        &nbsp;|&nbsp; {% endif %}
+        <a href="{{ url_for('logout') }}">Logout</a>
+      </div>
     </div>
+
     <div class="container" id="container">
       {% for folder in folders %}
       <div class="folder" data-folder="{{ folder }}">{{ folder }}</div>
       {% endfor %}
     </div>
 
-    <div class="context-menu" id="context-menu">
-      <div id="create-folder">Crea cartella</div>
-    </div>
-
     <script>
       const container = document.getElementById("container");
-      const contextMenu = document.getElementById("context-menu");
-      let selectedFolder = null;
 
-      // click destro per creare cartella
-      container.addEventListener("contextmenu", function (e) {
-        e.preventDefault();
-        contextMenu.style.top = e.pageY + "px";
-        contextMenu.style.left = e.pageX + "px";
-        contextMenu.style.display = "flex";
-      });
-      document.addEventListener(
-        "click",
-        () => (contextMenu.style.display = "none")
-      );
-
-      // crea cartella
-      document.getElementById("create-folder").addEventListener("click", () => {
-        const inputDiv = document.createElement("div");
-        inputDiv.className = "folder";
-        inputDiv.innerHTML =
-          '<input type="text" class="inline-input" placeholder="Nome cartella"/>';
-        container.prepend(inputDiv);
-        const input = inputDiv.querySelector("input");
-        input.focus();
-        input.addEventListener("keydown", function (e) {
-          if (e.key === "Enter") {
-            const name = this.value.trim();
-            if (name) {
-              fetch(`/create_folder/`, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/x-www-form-urlencoded",
-                },
-                body: `folder_name=${encodeURIComponent(name)}`,
-              }).then(() => location.reload());
-            } else inputDiv.remove();
-          }
-        });
-      });
-
-      // doppio click entra nella cartella
+      // Doppio click entra nella cartella
       container.addEventListener("dblclick", (e) => {
-        if (e.target.classList.contains("folder"))
+        if (e.target.classList.contains("folder")) {
           window.location.href = `/folder/${encodeURIComponent(
             e.target.dataset.folder
           )}`;
+        }
       });
     </script>
   </body>
