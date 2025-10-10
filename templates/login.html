@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Login - Gestionale</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+      }
+      body {
+        background-color: #000000;
+        color: #3399ff;
+        font-family: "Courier New", Courier, monospace;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .login-card {
+        border: 1px solid #1a1a1a;
+        border-radius: 20px;
+        box-shadow: 0 8px 30px rgba(51, 153, 255, 0.15);
+        max-width: 450px;
+        width: 100%;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+      .login-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 40px rgba(51, 153, 255, 0.3);
+      }
+      .login-header {
+        background-color: #000000;
+        color: #3399ff;
+        padding: 30px 25px;
+        text-align: center;
+        border-top-left-radius: 20px;
+        border-top-right-radius: 20px;
+      }
+      .login-header h2 {
+        margin: 0;
+        font-size: 2rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-shadow: 0 1px 3px rgba(51, 153, 255, 0.7);
+      }
+      .login-body {
+        padding: 40px 30px;
+        background-color: #000000;
+        border-bottom-left-radius: 20px;
+        border-bottom-right-radius: 20px;
+      }
+      .form-group {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 20px;
+      }
+      .form-group label {
+        font-weight: 700;
+        width: 100px;
+        text-align: right;
+        margin-right: 15px;
+        font-size: 1rem;
+        color: #3399ff;
+        user-select: none;
+      }
+      input {
+        border-radius: 10px;
+        border: 1.5px solid #3399ff;
+        padding: 12px 15px;
+        font-size: 1rem;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        flex: 1;
+        min-width: 0;
+        background-color: #000000;
+        color: #3399ff;
+      }
+      input:focus {
+        border-color: #66b3ff;
+        box-shadow: 0 0 8px #3399ffaa;
+        outline: none;
+      }
+      .btn-login {
+        background-color: #3399ff;
+        color: #000000;
+        border: none;
+        font-weight: 600;
+        font-size: 1.1rem;
+        padding: 12px;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(51, 153, 255, 0.4);
+        transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        width: 100%;
+        cursor: pointer;
+      }
+      .btn-login:hover,
+      .btn-login:focus {
+        background-color: #66b3ff;
+        box-shadow: 0 7px 20px rgba(51, 153, 255, 0.6);
+      }
+      .text-danger {
+        text-align: center;
+        margin-top: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="login-card">
+      <div class="login-header">
+        <h2>Login</h2>
+      </div>
+      <div class="login-body">
+        {% if error %}
+        <div class="text-danger">{{ error }}</div>
+        {% endif %}
+        <form method="post">
+          <div class="form-group">
+            <label>Username:</label>
+            <input type="text" name="username" required />
+          </div>
+          <div class="form-group">
+            <label>Password:</label>
+            <input type="password" name="password" required />
+          </div>
+          <button type="submit" class="btn-login">Accedi</button>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>

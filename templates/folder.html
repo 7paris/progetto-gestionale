@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Gestionale - {{ current_path or 'Root' }}</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: #000;
+        color: #3399ff;
+        font-family: "Courier New", monospace;
+      }
+      .navbar {
+        height: 50px;
+        background: #111;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 20px;
+        box-shadow: 0 2px 5px rgba(51, 153, 255, 0.5);
+      }
+      .navbar a {
+        color: #3399ff;
+        text-decoration: none;
+        font-weight: bold;
+        cursor: pointer;
+      }
+      .container {
+        padding: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        align-items: flex-start;
+        min-height: calc(100vh - 50px);
+      }
+      .file {
+        width: 100px;
+        height: 60px;
+        border: 1px solid #1a1a1a;
+        border-radius: 10px;
+        cursor: pointer;
+        box-shadow: 0 2px 6px rgba(51, 153, 255, 0.2);
+        text-align: center;
+        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #000;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .file:hover {
+        box-shadow: 0 5px 15px rgba(51, 153, 255, 0.4);
+      }
+      .context-menu {
+        position: absolute;
+        background: #111;
+        border: 1px solid #3399ff;
+        border-radius: 10px;
+        display: none;
+        flex-direction: column;
+        min-width: 150px;
+        z-index: 1000;
+      }
+      .context-menu div {
+        padding: 10px;
+        cursor: pointer;
+        color: #3399ff;
+      }
+      .context-menu div:hover {
+        background: #222;
+      }
+      .inline-input {
+        width: 90%;
+        border: none;
+        background: #222;
+        color: #3399ff;
+        border-radius: 5px;
+        padding: 3px;
+        font-size: 0.8rem;
+      }
+      .preview-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        z-index: 2000;
+      }
+      .preview-content {
+        max-width: 95%;
+        max-height: 90%;
+        background: #000;
+        border: 1px solid #3399ff;
+        border-radius: 10px;
+        padding: 20px;
+        overflow: auto;
+        color: #3399ff;
+        text-align: center;
+      }
+      .preview-content img,
+      .preview-content iframe,
+      .preview-content video,
+      .preview-content audio {
+        max-width: 100%;
+        max-height: 85vh;
+        border-radius: 10px;
+      }
+      .close-preview {
+        margin-top: 10px;
+        background: #3399ff;
+        color: #000;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+      .close-preview:hover {
+        background: #66b3ff;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="navbar">
+      <h1>{{ current_path or "Gestione file" }}</h1>
+      <div>
+        {% if current_path %}
+        <a href="#" id="go-back">← Torna</a>
+        &nbsp;|&nbsp; {% endif %}
+        <a href="/logout">LOGOUT</a>
+      </div>
+    </div>
+
+    <div class="container" id="container">
+      {% for item in items %}
+      <div
+        class="file {% if item.type == 'folder' %}folder{% endif %}"
+        data-name="{{ item.name }}"
+      >
+        {{ item.name }}
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="context-menu" id="menu-empty">
+      <div id="create-folder">Crea cartella</div>
+    </div>
+
+    <div class="context-menu" id="menu-item">
+      <div id="rename">Rinomina</div>
+      <div id="delete">Elimina</div>
+      <div id="download">Scarica</div>
+    </div>
+
+    <div class="preview-overlay" id="preview">
+      <div class="preview-content" id="preview-content"></div>
+      <button class="close-preview" id="close-preview">Chiudi</button>
+    </div>
+
+    <script>
+      const container = document.getElementById("container");
+      const menuEmpty = document.getElementById("menu-empty");
+      const menuItem = document.getElementById("menu-item");
+      let selected = null;
+      let selectedType = null;
+      let currentPath = "{{ current_path or '' }}";
+
+      // Torna (solo se in sottocartella)
+      const goBackBtn = document.getElementById("go-back");
+      if (goBackBtn) {
+        goBackBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          const parts = currentPath.split("/").filter((p) => p);
+          parts.pop();
+          if (parts.length === 0) {
+            window.location.href = "/files";
+          } else {
+            const newPath = parts.map(encodeURIComponent).join("/");
+            window.location.href = "/folder/" + newPath;
+          }
+        });
+      }
+
+      // Nascondi menu
+      function hideMenus() {
+        menuEmpty.style.display = "none";
+        menuItem.style.display = "none";
+      }
+      document.addEventListener("click", hideMenus);
+
+      // Menu destro
+      document.addEventListener("contextmenu", (e) => {
+        e.preventDefault();
+        hideMenus();
+        const fileEl = e.target.closest(".file");
+        const insideContainer = e.target.closest(".container");
+
+        if (fileEl && insideContainer) {
+          selected = fileEl.dataset.name;
+          selectedType = fileEl.classList.contains("folder")
+            ? "folder"
+            : "file";
+          menuItem.style.top = e.pageY + "px";
+          menuItem.style.left = e.pageX + "px";
+          menuItem.style.display = "flex";
+          document.getElementById("download").style.display =
+            selectedType === "file" ? "block" : "none";
+        } else if (insideContainer) {
+          selected = null;
+          menuEmpty.style.top = e.pageY + "px";
+          menuEmpty.style.left = e.pageX + "px";
+          menuEmpty.style.display = "flex";
+        }
+      });
+
+      // Crea cartella
+      document.getElementById("create-folder").addEventListener("click", () => {
+        const div = document.createElement("div");
+        div.className = "file folder";
+        div.innerHTML =
+          '<input type="text" class="inline-input" placeholder="Nome cartella"/>';
+        container.prepend(div);
+        const input = div.querySelector("input");
+        input.focus();
+        input.addEventListener("keydown", function (e) {
+          if (e.key === "Enter") {
+            const name = this.value.trim();
+            if (name) {
+              const url = currentPath
+                ? `/create_folder/${currentPath}`
+                : `/create_folder`;
+              fetch(url, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/x-www-form-urlencoded",
+                },
+                body: `folder_name=${encodeURIComponent(name)}`,
+              }).then(() => location.reload());
+            } else div.remove();
+          }
+        });
+      });
+
+      // Rinomina
+      document.getElementById("rename").addEventListener("click", () => {
+        if (!selected) return;
+        const fileDiv = document.querySelector(`[data-name='${selected}']`);
+        fileDiv.innerHTML = `<input type="text" class="inline-input" value="${selected}"/>`;
+        const input = fileDiv.querySelector("input");
+        input.focus();
+        input.addEventListener("keydown", function (e) {
+          if (e.key === "Enter") {
+            const newName = this.value.trim();
+            if (newName) {
+              let url;
+              if (selectedType === "folder") {
+                url = currentPath
+                  ? `/rename_folder/${currentPath}`
+                  : `/rename_folder`;
+              } else {
+                url = currentPath
+                  ? `/rename_file/${currentPath}`
+                  : `/rename_file`;
+              }
+              fetch(url, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/x-www-form-urlencoded",
+                },
+                body: `old_name=${encodeURIComponent(
+                  selected
+                )}&new_name=${encodeURIComponent(newName)}`,
+              }).then(() => location.reload());
+            }
+          }
+        });
+      });
+
+      // Elimina
+      document.getElementById("delete").addEventListener("click", () => {
+        if (!selected) return;
+        let url;
+        if (selectedType === "folder") {
+          url = currentPath
+            ? `/delete_folder/${currentPath}`
+            : `/delete_folder`;
+        } else {
+          url = currentPath ? `/delete_file/${currentPath}` : `/delete_file`;
+        }
+        const field = selectedType === "folder" ? "folder_name" : "file_name";
+        fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: `${field}=${encodeURIComponent(selected)}`,
+        }).then(() => location.reload());
+      });
+
+      // Scarica
+      document.getElementById("download").addEventListener("click", () => {
+        if (selectedType === "file") {
+          window.location.href = `/uploads/${
+            currentPath ? currentPath + "/" : ""
+          }${encodeURIComponent(selected)}`;
+        }
+      });
+
+      // Doppio click
+      container.addEventListener("dblclick", (e) => {
+        const target = e.target.closest(".file");
+        if (!target) return;
+        if (target.classList.contains("folder")) {
+          window.location.href = `/folder/${
+            currentPath ? currentPath + "/" : ""
+          }${encodeURIComponent(target.dataset.name)}`;
+        } else showPreview(target.dataset.name);
+      });
+
+      // Anteprima
+      function showPreview(name) {
+        const ext = name.split(".").pop().toLowerCase();
+        const src = `/uploads/${
+          currentPath ? currentPath + "/" : ""
+        }${encodeURIComponent(name)}`;
+        const preview = document.getElementById("preview");
+        const content = document.getElementById("preview-content");
+        content.innerHTML = "";
+        if (["png", "jpg", "jpeg", "gif", "bmp", "webp"].includes(ext))
+          content.innerHTML = `<img src="${src}" alt="${name}">`;
+        else if (["mp4", "webm", "ogg"].includes(ext))
+          content.innerHTML = `<video src="${src}" controls></video>`;
+        else if (["mp3", "wav", "ogg"].includes(ext))
+          content.innerHTML = `<audio src="${src}" controls></audio>`;
+        else content.innerHTML = `<iframe src="${src}"></iframe>`;
+        preview.style.display = "flex";
+      }
+
+      document.getElementById("close-preview").addEventListener("click", () => {
+        document.getElementById("preview").style.display = "none";
+      });
+
+      // Drag & drop
+      container.addEventListener("dragover", (e) => {
+        e.preventDefault();
+      });
+      container.addEventListener("drop", (e) => {
+        e.preventDefault();
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+          const formData = new FormData();
+          for (let i = 0; i < files.length; i++)
+            formData.append("file", files[i]);
+          fetch(currentPath ? `/folder/${currentPath}` : `/files`, {
+            method: "POST",
+            body: formData,
+          }).then(() => location.reload());
+        }
+      });
+    </script>
+  </body>
+</html>
