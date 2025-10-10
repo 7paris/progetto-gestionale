@@ -5,7 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-app.secret_key = 'una_chiave_segretissima'
+app.secret_key = 'KDBgslTehdzZAfBOTkj1EwB3vezP6QPf'
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -234,5 +234,9 @@ def uploaded_file(filename):
 # -----------------------
 # Avvio app
 # -----------------------
-if __name__=='__main__':
-    app.run(debug=True)
+import os
+
+if __name__ == '__main__':
+    port = int(os.environ.get("PORT", 5000))  # Render fornisce la porta via variabile d'ambiente
+    app.run(host='0.0.0.0', port=port, debug=True)
+
