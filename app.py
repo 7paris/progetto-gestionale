@@ -93,11 +93,13 @@ def view_folder(folder_path):
 
     return render_template('folder.html', items=items, current_path=folder_path, admin=session.get('is_admin', False))
 
-# --- CREATE / RENAME / DELETE ---
+# --- CREATE / RENAME / DELETE (SOLO ADMIN) ---
 @app.route('/create_folder', defaults={'folder_path':''}, methods=['POST'])
 @app.route('/create_folder/<path:folder_path>', methods=['POST'])
 @login_required
 def create_folder(folder_path):
+    if not session.get('is_admin'):
+        return ('Non autorizzato', 403)
     name = request.form['folder_name'].strip()
     if name:
         path = os.path.join(UPLOAD_FOLDER, folder_path, name)
@@ -108,6 +110,8 @@ def create_folder(folder_path):
 @app.route('/rename_folder/<path:folder_path>', methods=['POST'])
 @login_required
 def rename_folder(folder_path):
+    if not session.get('is_admin'):
+        return ('Non autorizzato', 403)
     old = request.form['old_name'].strip()
     new = request.form['new_name'].strip()
     old_path = os.path.join(UPLOAD_FOLDER, folder_path, old)
@@ -120,6 +124,8 @@ def rename_folder(folder_path):
 @app.route('/delete_folder/<path:folder_path>', methods=['POST'])
 @login_required
 def delete_folder(folder_path):
+    if not session.get('is_admin'):
+        return ('Non autorizzato', 403)
     folder_name = request.form['folder_name'].strip()
     path = os.path.join(UPLOAD_FOLDER, folder_path, folder_name)
     if os.path.exists(path):
@@ -130,6 +136,8 @@ def delete_folder(folder_path):
 @app.route('/rename_file/<path:folder_path>', methods=['POST'])
 @login_required
 def rename_file(folder_path):
+    if not session.get('is_admin'):
+        return ('Non autorizzato', 403)
     old = request.form.get('old_name', '').strip()
     new = request.form.get('new_name', '').strip()
     folder_full_path = os.path.join(UPLOAD_FOLDER, folder_path)
@@ -144,6 +152,8 @@ def rename_file(folder_path):
 @app.route('/delete_file/<path:folder_path>', methods=['POST'])
 @login_required
 def delete_file(folder_path):
+    if not session.get('is_admin'):
+        return ('Non autorizzato', 403)
     file_name = request.form['file_name'].strip()
     file_path = os.path.join(UPLOAD_FOLDER, folder_path, file_name)
     if os.path.exists(file_path):

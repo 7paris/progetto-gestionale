@@ -1,38 +1,4 @@
-<!DOCTYPE html>
-<html lang="it">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gestionale - Home</title>
-    <style>
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
-
-      body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          sans-serif;
-        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-        min-height: 100vh;
-        color: #fff;
-      }
-
-      .navbar {
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(10px);
-        padding: 16px 32px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-      }
-
-      .navbar-left {
-        display: flex;
-        align-items: center;
+align-items: center;
         gap: 16px;
       }
 
@@ -233,7 +199,7 @@
       }
     </style>
   </head>
-  <body>
+  <body data-admin="{{ admin }}">
     <div class="navbar">
       <div class="navbar-left">
         <h1>📁 Gestionale Files</h1>
@@ -252,11 +218,13 @@
         <p>Gestisci i tuoi file e cartelle in modo semplice e intuitivo</p>
       </div>
 
+      {% if admin %}
       <div class="toolbar">
         <button class="btn btn-primary" id="create-folder-btn">
           📁 Nuova Cartella
         </button>
       </div>
+      {% endif %}
 
       <div class="folders-grid" id="folders-grid">
         {% for folder in folders %}
@@ -271,41 +239,54 @@
       <div class="empty-state">
         <div class="empty-state-icon">📂</div>
         <p>Nessuna cartella presente</p>
+        {% if admin %}
         <button
           class="btn btn-primary"
           onclick="document.getElementById('create-folder-btn').click()"
         >
           Crea la tua prima cartella
         </button>
+        {% endif %}
       </div>
       {% endif %}
     </div>
 
     <div class="context-menu" id="context-menu">
       <div id="menu-open">📂 Apri</div>
+      {% if admin %}
       <div id="menu-rename">✏️ Rinomina</div>
       <div id="menu-delete">🗑️ Elimina</div>
+      {% endif %}
     </div>
 
+    {% if admin %}
     <div class="context-menu" id="context-menu-empty">
       <div id="menu-create-folder">📁 Nuova Cartella</div>
     </div>
+    {% endif %}
 
     <script>
+      const isAdmin = document.body.getAttribute('data-admin') === 'True';
       const foldersGrid = document.getElementById("folders-grid");
       const contextMenu = document.getElementById("context-menu");
-      const contextMenuEmpty = document.getElementById("context-menu-empty");
+      const contextMenuEmpty = isAdmin ? document.getElementById("context-menu-empty") : null;
       let selectedFolder = null;
 
       // CREA CARTELLA - senza popup
-      document
-        .getElementById("create-folder-btn")
-        .addEventListener("click", createFolder);
-      document
-        .getElementById("menu-create-folder")
-        .addEventListener("click", createFolder);
+      if (isAdmin) {
+        document
+          .getElementById("create-folder-btn")
+          .addEventListener("click", createFolder);
+
+        if (contextMenuEmpty) {
+          document
+            .getElementById("menu-create-folder")
+            .addEventListener("click", createFolder);
+        }
+      }
 
       function createFolder() {
+        if (!isAdmin) return;
         hideMenus();
         const newFolder = document.createElement("div");
         newFolder.className = "folder-item";
@@ -345,7 +326,7 @@
           contextMenu.style.top = e.pageY + "px";
           contextMenu.style.left = e.pageX + "px";
           contextMenu.style.display = "flex";
-        } else if (e.target.closest(".container")) {
+        } else if (isAdmin && contextMenuEmpty && e.target.closest(".container")) {
           contextMenuEmpty.style.top = e.pageY + "px";
           contextMenuEmpty.style.left = e.pageX + "px";
           contextMenuEmpty.style.display = "flex";
@@ -354,7 +335,7 @@
 
       function hideMenus() {
         contextMenu.style.display = "none";
-        contextMenuEmpty.style.display = "none";
+        if (contextMenuEmpty) contextMenuEmpty.style.display = "none";
       }
 
       document.addEventListener("click", hideMenus);
@@ -378,52 +359,54 @@
       });
 
       // RINOMINA - senza popup
-      document.getElementById("menu-rename").addEventListener("click", () => {
-        if (!selectedFolder) return;
-        hideMenus();
-        const oldName = selectedFolder.dataset.name;
-        const nameDiv = selectedFolder.querySelector(".folder-name");
-        nameDiv.innerHTML = `<input type="text" value="${oldName}" style="width: 100%; background: rgba(255,255,255,0.2); border: 2px solid #667eea; border-radius: 8px; padding: 6px; color: white; text-align: center; font-size: 14px; font-weight: 600;" />`;
-        const input = nameDiv.querySelector("input");
-        input.focus();
-        input.select();
-        input.addEventListener("keydown", (e) => {
-          if (e.key === "Enter") {
-            const newName = input.value.trim();
-            if (newName && newName !== oldName) {
-              fetch("/rename_folder", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/x-www-form-urlencoded",
-                },
-                body: `folder_path=&old_name=${encodeURIComponent(
-                  oldName
-                )}&new_name=${encodeURIComponent(newName)}`,
-              }).then(() => location.reload());
-            } else nameDiv.textContent = oldName;
-          } else if (e.key === "Escape") nameDiv.textContent = oldName;
+      if (isAdmin) {
+        document.getElementById("menu-rename").addEventListener("click", () => {
+          if (!selectedFolder) return;
+          hideMenus();
+          const oldName = selectedFolder.dataset.name;
+          const nameDiv = selectedFolder.querySelector(".folder-name");
+          nameDiv.innerHTML = `<input type="text" value="${oldName}" style="width: 100%; background: rgba(255,255,255,0.2); border: 2px solid #667eea; border-radius: 8px; padding: 6px; color: white; text-align: center; font-size: 14px; font-weight: 600;" />`;
+          const input = nameDiv.querySelector("input");
+          input.focus();
+          input.select();
+          input.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+              const newName = input.value.trim();
+              if (newName && newName !== oldName) {
+                fetch("/rename_folder", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                  },
+                  body: `folder_path=&old_name=${encodeURIComponent(
+                    oldName
+                  )}&new_name=${encodeURIComponent(newName)}`,
+                }).then(() => location.reload());
+              } else nameDiv.textContent = oldName;
+            } else if (e.key === "Escape") nameDiv.textContent = oldName;
+          });
+          input.addEventListener("blur", () =>
+            setTimeout(() => {
+              if (nameDiv.contains(input)) nameDiv.textContent = oldName;
+            }, 200)
+          );
         });
-        input.addEventListener("blur", () =>
-          setTimeout(() => {
-            if (nameDiv.contains(input)) nameDiv.textContent = oldName;
-          }, 200)
-        );
-      });
 
-      // ELIMINA - senza popup
-      document.getElementById("menu-delete").addEventListener("click", () => {
-        if (!selectedFolder) return;
-        hideMenus();
-        selectedFolder.style.opacity = "0.3";
-        selectedFolder.style.transform = "scale(0.8)";
-        fetch("/delete_folder", {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: `folder_path=&folder_name=${encodeURIComponent(
-            selectedFolder.dataset.name
-          )}`,
-        }).then(() => selectedFolder.remove());
-      });
+        // ELIMINA - senza popup
+        document.getElementById("menu-delete").addEventListener("click", () => {
+          if (!selectedFolder) return;
+          hideMenus();
+          selectedFolder.style.opacity = "0.3";
+          selectedFolder.style.transform = "scale(0.8)";
+          fetch("/delete_folder", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: `folder_path=&folder_name=${encodeURIComponent(
+              selectedFolder.dataset.name
+            )}`,
+          }).then(() => selectedFolder.remove());
+        });
+      }
     </script>
   </body>
 </html>

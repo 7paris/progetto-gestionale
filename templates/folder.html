@@ -360,7 +360,7 @@
       }
     </style>
   </head>
-  <body>
+  <body data-admin="{{ admin }}">
     <div class="navbar">
       <div class="navbar-left">
         <h1>📁 Gestionale</h1>
@@ -385,6 +385,7 @@
     </div>
 
     <div class="container">
+      {% if admin %}
       <div class="toolbar">
         <button class="btn btn-primary" id="upload-btn">📤 Carica File</button>
         <button class="btn" id="create-folder-btn">📁 Nuova Cartella</button>
@@ -396,6 +397,7 @@
         <div class="drop-zone-text">Trascina i file qui</div>
         <div class="drop-zone-subtext">oppure clicca su "Carica File"</div>
       </div>
+      {% endif %}
 
       <div class="files-grid" id="files-grid">
         {% for item in items %}
@@ -422,15 +424,21 @@
 
     <div class="context-menu" id="context-menu">
       <div id="menu-open">📂 Apri</div>
+      {% if admin %}
       <div id="menu-rename">✏️ Rinomina</div>
+      {% endif %}
       <div id="menu-download">⬇️ Scarica</div>
+      {% if admin %}
       <div id="menu-delete">🗑️ Elimina</div>
+      {% endif %}
     </div>
 
+    {% if admin %}
     <div class="context-menu" id="context-menu-empty">
       <div id="menu-create-folder">📁 Nuova Cartella</div>
       <div id="menu-upload">📤 Carica File</div>
     </div>
+    {% endif %}
 
     <div class="preview-overlay" id="preview">
       <div class="preview-buttons">
@@ -444,29 +452,40 @@
 
     <script>
       const currentPath = "{{ current_path or '' }}";
+      const isAdmin = document.body.getAttribute("data-admin") === "True";
       const filesGrid = document.getElementById("files-grid");
       const contextMenu = document.getElementById("context-menu");
-      const contextMenuEmpty = document.getElementById("context-menu-empty");
-      const dropZone = document.getElementById("drop-zone");
-      const fileInput = document.getElementById("file-input");
+      const contextMenuEmpty = isAdmin
+        ? document.getElementById("context-menu-empty")
+        : null;
+      const dropZone = isAdmin ? document.getElementById("drop-zone") : null;
+      const fileInput = isAdmin ? document.getElementById("file-input") : null;
       let selectedItem = null;
 
-      document.getElementById("upload-btn").addEventListener("click", () => {
-        fileInput.click();
-      });
+      if (isAdmin) {
+        document.getElementById("upload-btn").addEventListener("click", () => {
+          fileInput.click();
+        });
 
-      fileInput.addEventListener("change", (e) => {
-        uploadFiles(e.target.files);
-      });
+        fileInput.addEventListener("change", (e) => {
+          uploadFiles(e.target.files);
+        });
 
-      document
-        .getElementById("create-folder-btn")
-        .addEventListener("click", createFolder);
-      document
-        .getElementById("menu-create-folder")
-        .addEventListener("click", createFolder);
+        document
+          .getElementById("create-folder-btn")
+          .addEventListener("click", createFolder);
+        document
+          .getElementById("menu-create-folder")
+          .addEventListener("click", createFolder);
+
+        document.getElementById("menu-upload").addEventListener("click", () => {
+          hideMenus();
+          fileInput.click();
+        });
+      }
 
       function createFolder() {
+        if (!isAdmin) return;
         hideMenus();
 
         const newFolder = document.createElement("div");
@@ -523,6 +542,13 @@
         });
       }
 
+      function hideMenus() {
+        contextMenu.style.display = "none";
+        if (contextMenuEmpty) contextMenuEmpty.style.display = "none";
+      }
+
+      document.addEventListener("click", hideMenus);
+
       document.addEventListener("contextmenu", (e) => {
         e.preventDefault();
         hideMenus();
@@ -537,19 +563,16 @@
           const downloadBtn = document.getElementById("menu-download");
           downloadBtn.style.display =
             fileItem.dataset.type === "file" ? "flex" : "none";
-        } else if (e.target.closest(".container")) {
+        } else if (
+          isAdmin &&
+          contextMenuEmpty &&
+          e.target.closest(".container")
+        ) {
           contextMenuEmpty.style.top = e.pageY + "px";
           contextMenuEmpty.style.left = e.pageX + "px";
           contextMenuEmpty.style.display = "flex";
         }
       });
-
-      function hideMenus() {
-        contextMenu.style.display = "none";
-        contextMenuEmpty.style.display = "none";
-      }
-
-      document.addEventListener("click", hideMenus);
 
       filesGrid.addEventListener("dblclick", (e) => {
         const item = e.target.closest(".file-item");
@@ -579,54 +602,56 @@
         }
       });
 
-      document.getElementById("menu-rename").addEventListener("click", () => {
-        if (!selectedItem) return;
-        hideMenus();
+      if (isAdmin) {
+        document.getElementById("menu-rename").addEventListener("click", () => {
+          if (!selectedItem) return;
+          hideMenus();
 
-        const oldName = selectedItem.dataset.name;
-        const nameDiv = selectedItem.querySelector(".file-name");
+          const oldName = selectedItem.dataset.name;
+          const nameDiv = selectedItem.querySelector(".file-name");
 
-        nameDiv.innerHTML = `<input type="text" class="rename-input" value="${oldName}" style="width: 100%; background: rgba(255,255,255,0.2); border: 2px solid #667eea; border-radius: 8px; padding: 4px; color: white; text-align: center; font-size: 13px; font-weight: 600;" />`;
-        const input = nameDiv.querySelector("input");
-        input.focus();
-        input.select();
+          nameDiv.innerHTML = `<input type="text" class="rename-input" value="${oldName}" style="width: 100%; background: rgba(255,255,255,0.2); border: 2px solid #667eea; border-radius: 8px; padding: 4px; color: white; text-align: center; font-size: 13px; font-weight: 600;" />`;
+          const input = nameDiv.querySelector("input");
+          input.focus();
+          input.select();
 
-        input.addEventListener("keydown", (e) => {
-          if (e.key === "Enter") {
-            const newName = input.value.trim();
-            if (newName && newName !== oldName) {
-              const isFolder = selectedItem.dataset.type === "folder";
-              const url = currentPath
-                ? `/${
-                    isFolder ? "rename_folder" : "rename_file"
-                  }/${currentPath}`
-                : `/${isFolder ? "rename_folder" : "rename_file"}`;
+          input.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+              const newName = input.value.trim();
+              if (newName && newName !== oldName) {
+                const isFolder = selectedItem.dataset.type === "folder";
+                const url = currentPath
+                  ? `/${
+                      isFolder ? "rename_folder" : "rename_file"
+                    }/${currentPath}`
+                  : `/${isFolder ? "rename_folder" : "rename_file"}`;
 
-              fetch(url, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/x-www-form-urlencoded",
-                },
-                body: `old_name=${encodeURIComponent(
-                  oldName
-                )}&new_name=${encodeURIComponent(newName)}`,
-              }).then(() => location.reload());
-            } else {
+                fetch(url, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                  },
+                  body: `old_name=${encodeURIComponent(
+                    oldName
+                  )}&new_name=${encodeURIComponent(newName)}`,
+                }).then(() => location.reload());
+              } else {
+                nameDiv.textContent = oldName;
+              }
+            } else if (e.key === "Escape") {
               nameDiv.textContent = oldName;
             }
-          } else if (e.key === "Escape") {
-            nameDiv.textContent = oldName;
-          }
-        });
+          });
 
-        input.addEventListener("blur", () => {
-          setTimeout(() => {
-            if (nameDiv.contains(input)) {
-              nameDiv.textContent = oldName;
-            }
-          }, 200);
+          input.addEventListener("blur", () => {
+            setTimeout(() => {
+              if (nameDiv.contains(input)) {
+                nameDiv.textContent = oldName;
+              }
+            }, 200);
+          });
         });
-      });
+      }
 
       document.getElementById("menu-download").addEventListener("click", () => {
         if (!selectedItem || selectedItem.dataset.type !== "file") return;
@@ -638,32 +663,29 @@
         }${encodeURIComponent(fileName)}`;
       });
 
-      document.getElementById("menu-delete").addEventListener("click", () => {
-        if (!selectedItem) return;
-        hideMenus();
+      if (isAdmin) {
+        document.getElementById("menu-delete").addEventListener("click", () => {
+          if (!selectedItem) return;
+          hideMenus();
 
-        selectedItem.style.opacity = "0.3";
-        selectedItem.style.transform = "scale(0.8)";
+          selectedItem.style.opacity = "0.3";
+          selectedItem.style.transform = "scale(0.8)";
 
-        const isFolder = selectedItem.dataset.type === "folder";
-        const url = currentPath
-          ? `/${isFolder ? "delete_folder" : "delete_file"}/${currentPath}`
-          : `/${isFolder ? "delete_folder" : "delete_file"}`;
+          const isFolder = selectedItem.dataset.type === "folder";
+          const url = currentPath
+            ? `/${isFolder ? "delete_folder" : "delete_file"}/${currentPath}`
+            : `/${isFolder ? "delete_folder" : "delete_file"}`;
 
-        const field = isFolder ? "folder_name" : "file_name";
-        fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: `${field}=${encodeURIComponent(selectedItem.dataset.name)}`,
-        }).then(() => {
-          selectedItem.remove();
+          const field = isFolder ? "folder_name" : "file_name";
+          fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: `${field}=${encodeURIComponent(selectedItem.dataset.name)}`,
+          }).then(() => {
+            selectedItem.remove();
+          });
         });
-      });
-
-      document.getElementById("menu-upload").addEventListener("click", () => {
-        hideMenus();
-        fileInput.click();
-      });
+      }
 
       function showPreview(name) {
         const ext = name.split(".").pop().toLowerCase();
@@ -762,32 +784,34 @@
           }
         });
 
-      ["dragenter", "dragover", "dragleave", "drop"].forEach((eventName) => {
-        dropZone.addEventListener(eventName, (e) => {
-          e.preventDefault();
-          e.stopPropagation();
+      if (isAdmin && dropZone) {
+        ["dragenter", "dragover", "dragleave", "drop"].forEach((eventName) => {
+          dropZone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          });
         });
-      });
 
-      ["dragenter", "dragover"].forEach((eventName) => {
-        dropZone.addEventListener(eventName, () => {
-          dropZone.classList.add("dragover");
+        ["dragenter", "dragover"].forEach((eventName) => {
+          dropZone.addEventListener(eventName, () => {
+            dropZone.classList.add("dragover");
+          });
         });
-      });
 
-      ["dragleave", "drop"].forEach((eventName) => {
-        dropZone.addEventListener(eventName, () => {
-          dropZone.classList.remove("dragover");
+        ["dragleave", "drop"].forEach((eventName) => {
+          dropZone.addEventListener(eventName, () => {
+            dropZone.classList.remove("dragover");
+          });
         });
-      });
 
-      dropZone.addEventListener("drop", (e) => {
-        const files = e.dataTransfer.files;
-        uploadFiles(files);
-      });
+        dropZone.addEventListener("drop", (e) => {
+          const files = e.dataTransfer.files;
+          uploadFiles(files);
+        });
+      }
 
       function uploadFiles(files) {
-        if (files.length === 0) return;
+        if (files.length === 0 || !isAdmin) return;
 
         const formData = new FormData();
         for (let i = 0; i < files.length; i++) {
