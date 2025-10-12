@@ -2,87 +2,387 @@
 <html lang="it">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Gestione Utenti</title>
     <style>
-      body {
-        background: #000;
-        color: #3399ff;
-        font-family: "Courier New", monospace;
-        padding: 20px;
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
       }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        min-height: 100vh;
+        color: #fff;
+      }
+
       .navbar {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        padding: 16px 32px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
       }
-      a {
-        color: #3399ff;
+
+      .navbar h1 {
+        font-size: 24px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .navbar a {
+        color: #fff;
         text-decoration: none;
-        font-weight: bold;
+        font-weight: 600;
+        transition: all 0.2s;
+        padding: 8px 16px;
+        border-radius: 8px;
       }
+
+      .navbar a:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+
+      .container {
+        padding: 32px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .toolbar {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        padding: 16px 24px;
+        border-radius: 16px;
+        margin-bottom: 24px;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn:hover {
+        background: linear-gradient(135deg, #7c8ff0 0%, #8a5ab8 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      }
+
+      .table-container {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      }
+
       table {
         width: 100%;
         border-collapse: collapse;
-        margin-top: 20px;
       }
-      th,
-      td {
-        padding: 10px;
-        border: 1px solid #3399ff;
+
+      thead {
+        background: rgba(102, 126, 234, 0.3);
+      }
+
+      th {
+        padding: 16px 20px;
         text-align: left;
+        font-weight: 600;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #fff;
       }
-      button {
-        background: #3399ff;
-        color: #000;
-        border: none;
-        padding: 5px 10px;
-        border-radius: 5px;
-        cursor: pointer;
+
+      tbody tr {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.2s;
       }
-      button:hover {
-        background: #66b3ff;
+
+      tbody tr:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      tbody tr:last-child {
+        border-bottom: none;
+      }
+
+      td {
+        padding: 16px 20px;
+        color: rgba(255, 255, 255, 0.9);
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .badge-admin {
+        background: rgba(102, 126, 234, 0.3);
+        color: #fff;
+      }
+
+      .badge-user {
+        background: rgba(255, 255, 255, 0.2);
+        color: rgba(255, 255, 255, 0.8);
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.3s;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      .modal-content {
+        background: rgba(30, 30, 50, 0.98);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 16px;
+        padding: 32px;
+        max-width: 450px;
+        width: 90%;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        animation: slideUp 0.3s;
+      }
+
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .modal-header {
+        margin-bottom: 24px;
+      }
+
+      .modal-header h2 {
+        font-size: 24px;
+        color: #fff;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.9);
+      }
+
+      .form-group input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+        background: rgba(0, 0, 0, 0.3);
+        color: #fff;
+        font-size: 15px;
+        transition: all 0.3s;
+      }
+
+      .form-group input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+      }
+
+      .modal-buttons {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+      }
+
+      .btn-cancel {
+        background: rgba(255, 255, 255, 0.2);
+        flex: 1;
+      }
+
+      .btn-cancel:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+
+      .btn-submit {
+        flex: 1;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 60px 40px;
+        color: rgba(255, 255, 255, 0.6);
+      }
+
+      .empty-state-icon {
+        font-size: 64px;
+        margin-bottom: 16px;
+        opacity: 0.5;
       }
     </style>
   </head>
   <body>
     <div class="navbar">
-      <h1>Gestione Utenti</h1>
+      <h1>👥 Gestione Utenti</h1>
       <a href="{{ url_for('logout') }}">Logout</a>
     </div>
-    <button id="add-user">+ Nuovo utente</button>
-    <table>
-      <thead>
-        <tr>
-          <th>Nome Utente</th>
-          <th>Amministratore</th>
-        </tr>
-      </thead>
-      <tbody id="user-list">
-        {% for user in users %}
-        <tr>
-          <td>{{ user.username }}</td>
-          <td>{{ "Sì" if user.is_admin else "No" }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+
+    <div class="container">
+      <div class="toolbar">
+        <button class="btn" id="add-user-btn">➕ Nuovo Utente</button>
+      </div>
+
+      <div class="table-container">
+        {% if users %}
+        <table>
+          <thead>
+            <tr>
+              <th>Nome Utente</th>
+              <th>Ruolo</th>
+            </tr>
+          </thead>
+          <tbody id="user-list">
+            {% for user in users %}
+            <tr>
+              <td>{{ user.username }}</td>
+              <td>
+                {% if user.is_admin %}
+                <span class="badge badge-admin">👑 Amministratore</span>
+                {% else %}
+                <span class="badge badge-user">👤 Utente</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+          <div class="empty-state-icon">👥</div>
+          <div>Nessun utente presente</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="modal" id="user-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>➕ Nuovo Utente</h2>
+        </div>
+        <form id="user-form">
+          <div class="form-group">
+            <label>Username</label>
+            <input type="text" id="username" required autofocus />
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="password" required />
+          </div>
+          <div class="modal-buttons">
+            <button type="button" class="btn btn-cancel" id="cancel-btn">
+              Annulla
+            </button>
+            <button type="submit" class="btn btn-submit">Crea Utente</button>
+          </div>
+        </form>
+      </div>
+    </div>
 
     <script>
-      document.getElementById("add-user").addEventListener("click", () => {
-        const username = prompt("Inserisci nome utente:");
-        const password = prompt("Inserisci password:");
-        if (username && password) {
-          fetch("/create_user", {
-            // <- deve corrispondere al route Flask
+      const modal = document.getElementById("user-modal");
+      const addUserBtn = document.getElementById("add-user-btn");
+      const cancelBtn = document.getElementById("cancel-btn");
+      const userForm = document.getElementById("user-form");
+
+      addUserBtn.addEventListener("click", () => {
+        modal.style.display = "flex";
+        document.getElementById("username").focus();
+      });
+
+      cancelBtn.addEventListener("click", () => {
+        modal.style.display = "none";
+        userForm.reset();
+      });
+
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) {
+          modal.style.display = "none";
+          userForm.reset();
+        }
+      });
+
+      userForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value;
+
+        if (!username || !password) return;
+
+        try {
+          const response = await fetch("/create_user", {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
             body: `username=${encodeURIComponent(
               username
             )}&password=${encodeURIComponent(password)}`,
-          })
-            .then((res) => res.text())
-            .then(() => location.reload());
+          });
+
+          if (response.ok) {
+            location.reload();
+          } else {
+            alert("Errore durante la creazione dell'utente");
+          }
+        } catch (error) {
+          alert("Errore di connessione");
         }
       });
     </script>

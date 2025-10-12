@@ -2,236 +2,488 @@
 <html lang="it">
   <head>
     <meta charset="UTF-8" />
-    <title>Gestionale - {{ current_path or 'Root' }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestionale - {{ current_path or 'Home' }}</title>
     <style>
-      body {
+      * {
+        box-sizing: border-box;
         margin: 0;
         padding: 0;
-        background: #000;
-        color: #3399ff;
-        font-family: "Courier New", monospace;
       }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        min-height: 100vh;
+        color: #fff;
+      }
+
       .navbar {
-        height: 50px;
-        background: #111;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        padding: 16px 32px;
         display: flex;
-        align-items: center;
         justify-content: space-between;
-        padding: 0 20px;
-        box-shadow: 0 2px 5px rgba(51, 153, 255, 0.5);
+        align-items: center;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
       }
-      .navbar a {
-        color: #3399ff;
-        text-decoration: none;
-        font-weight: bold;
-        cursor: pointer;
-      }
-      .container {
-        padding: 20px;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 15px;
-        align-items: flex-start;
-        min-height: calc(100vh - 50px);
-      }
-      .file {
-        width: 100px;
-        height: 60px;
-        border: 1px solid #1a1a1a;
-        border-radius: 10px;
-        cursor: pointer;
-        box-shadow: 0 2px 6px rgba(51, 153, 255, 0.2);
-        text-align: center;
-        font-size: 0.8rem;
+
+      .navbar-left {
         display: flex;
         align-items: center;
-        justify-content: center;
-        background: #000;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        gap: 16px;
       }
-      .file:hover {
-        box-shadow: 0 5px 15px rgba(51, 153, 255, 0.4);
+
+      .navbar h1 {
+        font-size: 24px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
       }
-      .context-menu {
-        position: absolute;
-        background: #111;
-        border: 1px solid #3399ff;
+
+      .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.8);
+      }
+
+      .breadcrumb a {
+        color: rgba(255, 255, 255, 0.9);
+        text-decoration: none;
+        transition: all 0.2s;
+      }
+
+      .breadcrumb a:hover {
+        color: #fff;
+        text-decoration: underline;
+      }
+
+      .navbar-right {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+      }
+
+      .navbar a {
+        color: #fff;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s;
+        padding: 8px 16px;
+        border-radius: 8px;
+      }
+
+      .navbar a:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+
+      .btn-back {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 8px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+      }
+
+      .container {
+        padding: 32px;
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      .toolbar {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        padding: 16px 24px;
+        border-radius: 16px;
+        margin-bottom: 24px;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .btn {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        padding: 10px 20px;
         border-radius: 10px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      }
+
+      .btn-primary:hover {
+        background: linear-gradient(135deg, #7c8ff0 0%, #8a5ab8 100%);
+      }
+
+      .files-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 20px;
+      }
+
+      .file-item {
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        border-radius: 16px;
+        padding: 20px;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .file-item:hover {
+        background: rgba(255, 255, 255, 0.25);
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+      }
+
+      .file-item.folder {
+        border-color: rgba(102, 126, 234, 0.5);
+      }
+
+      .file-icon {
+        font-size: 48px;
+        margin-bottom: 12px;
+        display: block;
+      }
+
+      .file-name {
+        font-size: 13px;
+        font-weight: 600;
+        word-break: break-word;
+        color: #fff;
+      }
+
+      .context-menu {
+        position: fixed;
+        background: rgba(30, 30, 50, 0.98);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         display: none;
         flex-direction: column;
-        min-width: 150px;
+        min-width: 180px;
         z-index: 1000;
+        overflow: hidden;
       }
+
       .context-menu div {
-        padding: 10px;
+        padding: 12px 16px;
         cursor: pointer;
-        color: #3399ff;
+        color: #fff;
+        font-size: 14px;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 10px;
       }
+
       .context-menu div:hover {
-        background: #222;
+        background: rgba(102, 126, 234, 0.3);
       }
-      .inline-input {
-        width: 90%;
-        border: none;
-        background: #222;
-        color: #3399ff;
-        border-radius: 5px;
-        padding: 3px;
-        font-size: 0.8rem;
+
+      .drop-zone {
+        border: 3px dashed rgba(255, 255, 255, 0.3);
+        border-radius: 16px;
+        padding: 60px 40px;
+        text-align: center;
+        margin-bottom: 24px;
+        transition: all 0.3s;
+        background: rgba(255, 255, 255, 0.05);
       }
+
+      .drop-zone.dragover {
+        border-color: #667eea;
+        background: rgba(102, 126, 234, 0.2);
+        transform: scale(1.02);
+      }
+
+      .drop-zone-icon {
+        font-size: 64px;
+        margin-bottom: 16px;
+        opacity: 0.6;
+      }
+
+      .drop-zone-text {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+
+      .drop-zone-subtext {
+        font-size: 14px;
+        opacity: 0.7;
+      }
+
       .preview-overlay {
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.85);
+        background: rgba(0, 0, 0, 0.95);
         display: none;
         align-items: center;
         justify-content: center;
         flex-direction: column;
         z-index: 2000;
+        animation: fadeIn 0.3s;
+        padding: 0;
       }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      .preview-header {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
       .preview-content {
-        max-width: 95%;
-        max-height: 90%;
-        background: #000;
-        border: 1px solid #3399ff;
-        border-radius: 10px;
-        padding: 20px;
+        width: 100vw;
+        height: 100vh;
+        background: transparent;
+        backdrop-filter: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
         overflow: auto;
-        color: #3399ff;
         text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
+
       .preview-content img,
-      .preview-content iframe,
       .preview-content video,
       .preview-content audio {
-        max-width: 100%;
-        max-height: 85vh;
-        border-radius: 10px;
+        max-width: 100vw;
+        max-height: 100vh;
+        width: auto;
+        height: auto;
+        border-radius: 0;
+        object-fit: contain;
       }
-      .close-preview {
-        margin-top: 10px;
-        background: #3399ff;
-        color: #000;
+
+      .preview-content iframe,
+      .preview-content embed {
+        width: 100vw;
+        height: 100vh;
         border: none;
-        padding: 8px 15px;
-        border-radius: 10px;
-        cursor: pointer;
-        font-weight: bold;
+        border-radius: 0;
       }
-      .close-preview:hover {
-        background: #66b3ff;
+
+      .preview-buttons {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        z-index: 2001;
+      }
+
+      .btn-preview {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 12px 32px;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 16px;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn-preview:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+      }
+
+      .btn-preview-secondary {
+        background: rgba(255, 255, 255, 0.2);
+      }
+
+      .btn-preview-secondary:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 80px 40px;
+        color: rgba(255, 255, 255, 0.6);
+      }
+
+      .empty-state-icon {
+        font-size: 80px;
+        margin-bottom: 20px;
+        opacity: 0.5;
       }
     </style>
   </head>
   <body>
     <div class="navbar">
-      <h1>{{ current_path or "Gestione file" }}</h1>
-      <div>
+      <div class="navbar-left">
+        <h1>📁 Gestionale</h1>
         {% if current_path %}
-        <a href="#" id="go-back">← Torna</a>
-        &nbsp;|&nbsp; {% endif %}
-        <a href="/logout">LOGOUT</a>
+        <div class="breadcrumb">
+          <a href="/files">Home</a>
+          {% set parts = current_path.split('/') %} {% for part in parts %}
+          <span>/</span>
+          <span>{{ part }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      <div class="navbar-right">
+        {% if current_path %}
+        <a href="#" id="go-back" class="btn-back">← Indietro</a>
+        {% endif %} {% if admin %}
+        <a href="{{ url_for('manage_users') }}">👥 Gestione utenti</a>
+        {% endif %}
+        <a href="/logout">Logout</a>
       </div>
     </div>
 
-    <div class="container" id="container">
-      {% for item in items %}
-      <div
-        class="file {% if item.type == 'folder' %}folder{% endif %}"
-        data-name="{{ item.name }}"
-      >
-        {{ item.name }}
+    <div class="container">
+      <div class="toolbar">
+        <button class="btn btn-primary" id="upload-btn">📤 Carica File</button>
+        <button class="btn" id="create-folder-btn">📁 Nuova Cartella</button>
+        <input type="file" id="file-input" multiple style="display: none" />
       </div>
-      {% endfor %}
+
+      <div class="drop-zone" id="drop-zone">
+        <div class="drop-zone-icon">📂</div>
+        <div class="drop-zone-text">Trascina i file qui</div>
+        <div class="drop-zone-subtext">oppure clicca su "Carica File"</div>
+      </div>
+
+      <div class="files-grid" id="files-grid">
+        {% for item in items %}
+        <div
+          class="file-item {% if item.type == 'folder' %}folder{% endif %}"
+          data-name="{{ item.name }}"
+          data-type="{{ item.type }}"
+        >
+          <span class="file-icon">
+            {% if item.type == 'folder' %} 📁 {% else %} 📄 {% endif %}
+          </span>
+          <div class="file-name">{{ item.name }}</div>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% if not items %}
+      <div class="empty-state">
+        <div class="empty-state-icon">🔭</div>
+        <div>Nessun file o cartella presente</div>
+      </div>
+      {% endif %}
     </div>
 
-    <div class="context-menu" id="menu-empty">
-      <div id="create-folder">Crea cartella</div>
+    <div class="context-menu" id="context-menu">
+      <div id="menu-open">📂 Apri</div>
+      <div id="menu-rename">✏️ Rinomina</div>
+      <div id="menu-download">⬇️ Scarica</div>
+      <div id="menu-delete">🗑️ Elimina</div>
     </div>
 
-    <div class="context-menu" id="menu-item">
-      <div id="rename">Rinomina</div>
-      <div id="delete">Elimina</div>
-      <div id="download">Scarica</div>
+    <div class="context-menu" id="context-menu-empty">
+      <div id="menu-create-folder">📁 Nuova Cartella</div>
+      <div id="menu-upload">📤 Carica File</div>
     </div>
 
     <div class="preview-overlay" id="preview">
+      <div class="preview-buttons">
+        <button class="btn-preview btn-preview-secondary" id="download-preview">
+          ⬇️ Scarica
+        </button>
+        <button class="btn-preview" id="close-preview">✕ Chiudi</button>
+      </div>
       <div class="preview-content" id="preview-content"></div>
-      <button class="close-preview" id="close-preview">Chiudi</button>
     </div>
 
     <script>
-      const container = document.getElementById("container");
-      const menuEmpty = document.getElementById("menu-empty");
-      const menuItem = document.getElementById("menu-item");
-      let selected = null;
-      let selectedType = null;
-      let currentPath = "{{ current_path or '' }}";
+      const currentPath = "{{ current_path or '' }}";
+      const filesGrid = document.getElementById("files-grid");
+      const contextMenu = document.getElementById("context-menu");
+      const contextMenuEmpty = document.getElementById("context-menu-empty");
+      const dropZone = document.getElementById("drop-zone");
+      const fileInput = document.getElementById("file-input");
+      let selectedItem = null;
 
-      // Torna (solo se in sottocartella)
-      const goBackBtn = document.getElementById("go-back");
-      if (goBackBtn) {
-        goBackBtn.addEventListener("click", (e) => {
-          e.preventDefault();
-          const parts = currentPath.split("/").filter((p) => p);
-          parts.pop();
-          if (parts.length === 0) {
-            window.location.href = "/files";
-          } else {
-            const newPath = parts.map(encodeURIComponent).join("/");
-            window.location.href = "/folder/" + newPath;
-          }
-        });
-      }
-
-      // Nascondi menu
-      function hideMenus() {
-        menuEmpty.style.display = "none";
-        menuItem.style.display = "none";
-      }
-      document.addEventListener("click", hideMenus);
-
-      // Menu destro
-      document.addEventListener("contextmenu", (e) => {
-        e.preventDefault();
-        hideMenus();
-        const fileEl = e.target.closest(".file");
-        const insideContainer = e.target.closest(".container");
-
-        if (fileEl && insideContainer) {
-          selected = fileEl.dataset.name;
-          selectedType = fileEl.classList.contains("folder")
-            ? "folder"
-            : "file";
-          menuItem.style.top = e.pageY + "px";
-          menuItem.style.left = e.pageX + "px";
-          menuItem.style.display = "flex";
-          document.getElementById("download").style.display =
-            selectedType === "file" ? "block" : "none";
-        } else if (insideContainer) {
-          selected = null;
-          menuEmpty.style.top = e.pageY + "px";
-          menuEmpty.style.left = e.pageX + "px";
-          menuEmpty.style.display = "flex";
-        }
+      document.getElementById("upload-btn").addEventListener("click", () => {
+        fileInput.click();
       });
 
-      // Crea cartella
-      document.getElementById("create-folder").addEventListener("click", () => {
-        const div = document.createElement("div");
-        div.className = "file folder";
-        div.innerHTML =
-          '<input type="text" class="inline-input" placeholder="Nome cartella"/>';
-        container.prepend(div);
-        const input = div.querySelector("input");
+      fileInput.addEventListener("change", (e) => {
+        uploadFiles(e.target.files);
+      });
+
+      document
+        .getElementById("create-folder-btn")
+        .addEventListener("click", createFolder);
+      document
+        .getElementById("menu-create-folder")
+        .addEventListener("click", createFolder);
+
+      function createFolder() {
+        hideMenus();
+
+        const newFolder = document.createElement("div");
+        newFolder.className = "file-item folder";
+        newFolder.dataset.type = "folder";
+        newFolder.innerHTML = `
+          <span class="file-icon">📁</span>
+          <input type="text" class="folder-input" placeholder="Nome cartella" style="width: 100%; background: rgba(255,255,255,0.2); border: 2px solid #667eea; border-radius: 8px; padding: 6px; color: white; text-align: center; font-size: 13px; font-weight: 600;" autofocus />
+        `;
+
+        filesGrid.prepend(newFolder);
+        const input = newFolder.querySelector("input");
         input.focus();
-        input.addEventListener("keydown", function (e) {
+
+        input.addEventListener("keydown", (e) => {
           if (e.key === "Enter") {
-            const name = this.value.trim();
+            const name = input.value.trim();
             if (name) {
               const url = currentPath
                 ? `/create_folder/${currentPath}`
@@ -243,86 +495,176 @@
                 },
                 body: `folder_name=${encodeURIComponent(name)}`,
               }).then(() => location.reload());
-            } else div.remove();
+            } else {
+              newFolder.remove();
+            }
+          } else if (e.key === "Escape") {
+            newFolder.remove();
           }
         });
+
+        input.addEventListener("blur", () => {
+          setTimeout(() => newFolder.remove(), 200);
+        });
+      }
+
+      const goBackBtn = document.getElementById("go-back");
+      if (goBackBtn) {
+        goBackBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          const parts = currentPath.split("/").filter((p) => p);
+          parts.pop();
+          if (parts.length === 0) {
+            window.location.href = "/files";
+          } else {
+            window.location.href =
+              "/folder/" + parts.map(encodeURIComponent).join("/");
+          }
+        });
+      }
+
+      document.addEventListener("contextmenu", (e) => {
+        e.preventDefault();
+        hideMenus();
+
+        const fileItem = e.target.closest(".file-item");
+        if (fileItem) {
+          selectedItem = fileItem;
+          contextMenu.style.top = e.pageY + "px";
+          contextMenu.style.left = e.pageX + "px";
+          contextMenu.style.display = "flex";
+
+          const downloadBtn = document.getElementById("menu-download");
+          downloadBtn.style.display =
+            fileItem.dataset.type === "file" ? "flex" : "none";
+        } else if (e.target.closest(".container")) {
+          contextMenuEmpty.style.top = e.pageY + "px";
+          contextMenuEmpty.style.left = e.pageX + "px";
+          contextMenuEmpty.style.display = "flex";
+        }
       });
 
-      // Rinomina
-      document.getElementById("rename").addEventListener("click", () => {
-        if (!selected) return;
-        const fileDiv = document.querySelector(`[data-name='${selected}']`);
-        fileDiv.innerHTML = `<input type="text" class="inline-input" value="${selected}"/>`;
-        const input = fileDiv.querySelector("input");
+      function hideMenus() {
+        contextMenu.style.display = "none";
+        contextMenuEmpty.style.display = "none";
+      }
+
+      document.addEventListener("click", hideMenus);
+
+      filesGrid.addEventListener("dblclick", (e) => {
+        const item = e.target.closest(".file-item");
+        if (!item) return;
+
+        if (item.dataset.type === "folder") {
+          const folderName = item.dataset.name;
+          window.location.href = `/folder/${
+            currentPath ? currentPath + "/" : ""
+          }${encodeURIComponent(folderName)}`;
+        } else {
+          showPreview(item.dataset.name);
+        }
+      });
+
+      document.getElementById("menu-open").addEventListener("click", () => {
+        if (!selectedItem) return;
+        hideMenus();
+
+        if (selectedItem.dataset.type === "folder") {
+          const folderName = selectedItem.dataset.name;
+          window.location.href = `/folder/${
+            currentPath ? currentPath + "/" : ""
+          }${encodeURIComponent(folderName)}`;
+        } else {
+          showPreview(selectedItem.dataset.name);
+        }
+      });
+
+      document.getElementById("menu-rename").addEventListener("click", () => {
+        if (!selectedItem) return;
+        hideMenus();
+
+        const oldName = selectedItem.dataset.name;
+        const nameDiv = selectedItem.querySelector(".file-name");
+
+        nameDiv.innerHTML = `<input type="text" class="rename-input" value="${oldName}" style="width: 100%; background: rgba(255,255,255,0.2); border: 2px solid #667eea; border-radius: 8px; padding: 4px; color: white; text-align: center; font-size: 13px; font-weight: 600;" />`;
+        const input = nameDiv.querySelector("input");
         input.focus();
-        input.addEventListener("keydown", function (e) {
+        input.select();
+
+        input.addEventListener("keydown", (e) => {
           if (e.key === "Enter") {
-            const newName = this.value.trim();
-            if (newName) {
-              let url;
-              if (selectedType === "folder") {
-                url = currentPath
-                  ? `/rename_folder/${currentPath}`
-                  : `/rename_folder`;
-              } else {
-                url = currentPath
-                  ? `/rename_file/${currentPath}`
-                  : `/rename_file`;
-              }
+            const newName = input.value.trim();
+            if (newName && newName !== oldName) {
+              const isFolder = selectedItem.dataset.type === "folder";
+              const url = currentPath
+                ? `/${
+                    isFolder ? "rename_folder" : "rename_file"
+                  }/${currentPath}`
+                : `/${isFolder ? "rename_folder" : "rename_file"}`;
+
               fetch(url, {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/x-www-form-urlencoded",
                 },
                 body: `old_name=${encodeURIComponent(
-                  selected
+                  oldName
                 )}&new_name=${encodeURIComponent(newName)}`,
               }).then(() => location.reload());
+            } else {
+              nameDiv.textContent = oldName;
             }
+          } else if (e.key === "Escape") {
+            nameDiv.textContent = oldName;
           }
+        });
+
+        input.addEventListener("blur", () => {
+          setTimeout(() => {
+            if (nameDiv.contains(input)) {
+              nameDiv.textContent = oldName;
+            }
+          }, 200);
         });
       });
 
-      // Elimina
-      document.getElementById("delete").addEventListener("click", () => {
-        if (!selected) return;
-        let url;
-        if (selectedType === "folder") {
-          url = currentPath
-            ? `/delete_folder/${currentPath}`
-            : `/delete_folder`;
-        } else {
-          url = currentPath ? `/delete_file/${currentPath}` : `/delete_file`;
-        }
-        const field = selectedType === "folder" ? "folder_name" : "file_name";
+      document.getElementById("menu-download").addEventListener("click", () => {
+        if (!selectedItem || selectedItem.dataset.type !== "file") return;
+        hideMenus();
+
+        const fileName = selectedItem.dataset.name;
+        window.location.href = `/download/${
+          currentPath ? currentPath + "/" : ""
+        }${encodeURIComponent(fileName)}`;
+      });
+
+      document.getElementById("menu-delete").addEventListener("click", () => {
+        if (!selectedItem) return;
+        hideMenus();
+
+        selectedItem.style.opacity = "0.3";
+        selectedItem.style.transform = "scale(0.8)";
+
+        const isFolder = selectedItem.dataset.type === "folder";
+        const url = currentPath
+          ? `/${isFolder ? "delete_folder" : "delete_file"}/${currentPath}`
+          : `/${isFolder ? "delete_folder" : "delete_file"}`;
+
+        const field = isFolder ? "folder_name" : "file_name";
         fetch(url, {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: `${field}=${encodeURIComponent(selected)}`,
-        }).then(() => location.reload());
+          body: `${field}=${encodeURIComponent(selectedItem.dataset.name)}`,
+        }).then(() => {
+          selectedItem.remove();
+        });
       });
 
-      // Scarica
-      document.getElementById("download").addEventListener("click", () => {
-        if (selectedType === "file") {
-          window.location.href = `/uploads/${
-            currentPath ? currentPath + "/" : ""
-          }${encodeURIComponent(selected)}`;
-        }
+      document.getElementById("menu-upload").addEventListener("click", () => {
+        hideMenus();
+        fileInput.click();
       });
 
-      // Doppio click
-      container.addEventListener("dblclick", (e) => {
-        const target = e.target.closest(".file");
-        if (!target) return;
-        if (target.classList.contains("folder")) {
-          window.location.href = `/folder/${
-            currentPath ? currentPath + "/" : ""
-          }${encodeURIComponent(target.dataset.name)}`;
-        } else showPreview(target.dataset.name);
-      });
-
-      // Anteprima
       function showPreview(name) {
         const ext = name.split(".").pop().toLowerCase();
         const src = `/uploads/${
@@ -330,14 +672,62 @@
         }${encodeURIComponent(name)}`;
         const preview = document.getElementById("preview");
         const content = document.getElementById("preview-content");
-        content.innerHTML = "";
-        if (["png", "jpg", "jpeg", "gif", "bmp", "webp"].includes(ext))
-          content.innerHTML = `<img src="${src}" alt="${name}">`;
-        else if (["mp4", "webm", "ogg"].includes(ext))
-          content.innerHTML = `<video src="${src}" controls></video>`;
-        else if (["mp3", "wav", "ogg"].includes(ext))
-          content.innerHTML = `<audio src="${src}" controls></audio>`;
-        else content.innerHTML = `<iframe src="${src}"></iframe>`;
+
+        preview.dataset.currentFile = name;
+
+        content.innerHTML =
+          '<div style="padding: 20px; color: white;">Caricamento...</div>';
+
+        if (
+          ["png", "jpg", "jpeg", "gif", "bmp", "webp", "svg", "ico"].includes(
+            ext
+          )
+        ) {
+          content.innerHTML = `<img src="${src}" alt="${name}" style="max-width: 100vw; max-height: 100vh; object-fit: contain;" onload="this.style.display='block'" onerror="this.parentElement.innerHTML='<div style=padding:40px;color:white>Errore nel caricamento dell\\'immagine</div>'">`;
+        } else if (["mp4", "webm", "ogg"].includes(ext)) {
+          content.innerHTML = `<video src="${src}" controls style="max-width: 100vw; max-height: 100vh; object-fit: contain;"></video>`;
+        } else if (["mp3", "wav", "ogg", "m4a"].includes(ext)) {
+          content.innerHTML = `
+            <div style="padding: 40px;">
+              <div style="font-size: 64px; margin-bottom: 20px;">🎵</div>
+              <div style="margin-bottom: 20px; font-size: 18px; color: white;">${name}</div>
+              <audio src="${src}" controls style="width: 100%; max-width: 500px;"></audio>
+            </div>`;
+        } else if (["pdf"].includes(ext)) {
+          content.innerHTML = `<embed src="${src}" type="application/pdf" width="100%" height="100%" style="position: absolute; top: 0; left: 0;" />`;
+        } else if (["txt", "log", "md", "csv"].includes(ext)) {
+          fetch(src)
+            .then((res) => res.text())
+            .then((text) => {
+              content.innerHTML = `<pre style="width: 100vw; height: 100vh; text-align: left; background: rgba(0,0,0,0.8); padding: 40px; margin: 0; overflow: auto; color: #fff; white-space: pre-wrap; word-wrap: break-word; box-sizing: border-box;">${text
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")}</pre>`;
+            })
+            .catch(() => {
+              content.innerHTML =
+                '<div style="padding: 40px; color: white;">Errore nel caricamento del file</div>';
+            });
+        } else if (["html", "htm", "css", "js", "json", "xml"].includes(ext)) {
+          fetch(src)
+            .then((res) => res.text())
+            .then((text) => {
+              content.innerHTML = `<pre style="width: 100vw; height: 100vh; text-align: left; background: rgba(0,0,0,0.8); padding: 40px; margin: 0; overflow: auto; color: #0f0; font-family: 'Courier New', monospace; white-space: pre-wrap; word-wrap: break-word; box-sizing: border-box;">${text
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")}</pre>`;
+            })
+            .catch(() => {
+              content.innerHTML =
+                '<div style="padding: 40px; color: white;">Errore nel caricamento del file</div>';
+            });
+        } else {
+          content.innerHTML = `<div style="padding: 40px; font-size: 18px; color: white;">
+            <div style="font-size: 64px; margin-bottom: 20px;">📄</div>
+            <div style="margin-bottom: 20px;">Anteprima non disponibile per questo tipo di file</div>
+            <div style="font-size: 14px; opacity: 0.7; margin-bottom: 20px;">${name}</div>
+            <div style="font-size: 12px; opacity: 0.5;">Estensione: .${ext}</div>
+          </div>`;
+        }
+
         preview.style.display = "flex";
       }
 
@@ -345,23 +735,70 @@
         document.getElementById("preview").style.display = "none";
       });
 
-      // Drag & drop
-      container.addEventListener("dragover", (e) => {
-        e.preventDefault();
-      });
-      container.addEventListener("drop", (e) => {
-        e.preventDefault();
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-          const formData = new FormData();
-          for (let i = 0; i < files.length; i++)
-            formData.append("file", files[i]);
-          fetch(currentPath ? `/folder/${currentPath}` : `/files`, {
-            method: "POST",
-            body: formData,
-          }).then(() => location.reload());
+      document.getElementById("preview").addEventListener("click", (e) => {
+        if (e.target.id === "preview") {
+          document.getElementById("preview").style.display = "none";
         }
       });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          const preview = document.getElementById("preview");
+          if (preview.style.display === "flex") {
+            preview.style.display = "none";
+          }
+        }
+      });
+
+      document
+        .getElementById("download-preview")
+        .addEventListener("click", () => {
+          const preview = document.getElementById("preview");
+          const fileName = preview.dataset.currentFile;
+          if (fileName) {
+            window.location.href = `/download/${
+              currentPath ? currentPath + "/" : ""
+            }${encodeURIComponent(fileName)}`;
+          }
+        });
+
+      ["dragenter", "dragover", "dragleave", "drop"].forEach((eventName) => {
+        dropZone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        });
+      });
+
+      ["dragenter", "dragover"].forEach((eventName) => {
+        dropZone.addEventListener(eventName, () => {
+          dropZone.classList.add("dragover");
+        });
+      });
+
+      ["dragleave", "drop"].forEach((eventName) => {
+        dropZone.addEventListener(eventName, () => {
+          dropZone.classList.remove("dragover");
+        });
+      });
+
+      dropZone.addEventListener("drop", (e) => {
+        const files = e.dataTransfer.files;
+        uploadFiles(files);
+      });
+
+      function uploadFiles(files) {
+        if (files.length === 0) return;
+
+        const formData = new FormData();
+        for (let i = 0; i < files.length; i++) {
+          formData.append("file", files[i]);
+        }
+
+        fetch(currentPath ? `/folder/${currentPath}` : `/files`, {
+          method: "POST",
+          body: formData,
+        }).then(() => location.reload());
+      }
     </script>
   </body>
 </html>

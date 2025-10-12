@@ -2,86 +2,427 @@
 <html lang="it">
   <head>
     <meta charset="UTF-8" />
-    <title>Gestionale</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestionale - Home</title>
     <style>
-      body {
+      * {
+        box-sizing: border-box;
         margin: 0;
         padding: 0;
-        background: #000;
-        color: #3399ff;
-        font-family: "Courier New", monospace;
       }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        min-height: 100vh;
+        color: #fff;
+      }
+
       .navbar {
-        height: 50px;
-        background: #111;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        padding: 16px 32px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+      }
+
+      .navbar-left {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        padding: 0 20px;
-        box-shadow: 0 2px 5px rgba(51, 153, 255, 0.5);
+        gap: 16px;
       }
+
       .navbar h1 {
-        margin: 0;
-      }
-      .navbar a {
-        color: #3399ff;
-        text-decoration: none;
-        font-weight: bold;
-        cursor: pointer;
-      }
-      .container {
-        padding: 20px;
+        font-size: 24px;
+        font-weight: 700;
         display: flex;
-        flex-wrap: wrap;
-        gap: 15px;
+        align-items: center;
+        gap: 10px;
       }
-      .folder {
-        padding: 5px 10px;
-        border: 1px solid #1a1a1a;
+
+      .navbar-right {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+      }
+
+      .navbar a {
+        color: #fff;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s;
+        padding: 8px 16px;
+        border-radius: 8px;
+      }
+
+      .navbar a:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+
+      .container {
+        padding: 32px;
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      .welcome-section {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        padding: 32px;
+        border-radius: 16px;
+        margin-bottom: 32px;
+        text-align: center;
+      }
+
+      .welcome-section h2 {
+        font-size: 32px;
+        margin-bottom: 12px;
+      }
+
+      .welcome-section p {
+        font-size: 16px;
+        opacity: 0.9;
+      }
+
+      .toolbar {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        padding: 16px 24px;
+        border-radius: 16px;
+        margin-bottom: 24px;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .btn {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        padding: 10px 20px;
         border-radius: 10px;
         cursor: pointer;
-        box-shadow: 0 2px 6px rgba(51, 153, 255, 0.2);
-        min-width: 80px;
-        min-height: 30px;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      }
+
+      .btn-primary:hover {
+        background: linear-gradient(135deg, #7c8ff0 0%, #8a5ab8 100%);
+      }
+
+      .folders-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 24px;
+      }
+
+      .folder-item {
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px);
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 16px;
+        padding: 24px;
+        cursor: pointer;
+        transition: all 0.3s;
         text-align: center;
-        font-size: 0.9rem;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .folder-item::before {
+        content: "";
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border-radius: 16px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        z-index: -1;
+      }
+
+      .folder-item:hover {
+        background: rgba(255, 255, 255, 0.25);
+        transform: translateY(-6px) scale(1.02);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+      }
+
+      .folder-item:hover::before {
+        opacity: 0.3;
+      }
+
+      .folder-icon {
+        font-size: 56px;
+        margin-bottom: 16px;
+        display: block;
+        filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+      }
+
+      .folder-name {
+        font-size: 14px;
+        font-weight: 600;
+        word-break: break-word;
+        color: #fff;
+        line-height: 1.4;
+      }
+
+      .context-menu {
+        position: fixed;
+        background: rgba(30, 30, 50, 0.98);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        display: none;
+        flex-direction: column;
+        min-width: 180px;
+        z-index: 1000;
+        overflow: hidden;
+      }
+
+      .context-menu div {
+        padding: 12px 16px;
+        cursor: pointer;
+        color: #fff;
+        font-size: 14px;
+        transition: all 0.2s;
         display: flex;
         align-items: center;
-        justify-content: center;
-        background: #000;
+        gap: 10px;
       }
-      .folder:hover {
-        box-shadow: 0 5px 15px rgba(51, 153, 255, 0.4);
+
+      .context-menu div:hover {
+        background: rgba(102, 126, 234, 0.3);
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 80px 40px;
+        color: rgba(255, 255, 255, 0.6);
+      }
+
+      .empty-state-icon {
+        font-size: 80px;
+        margin-bottom: 20px;
+        opacity: 0.5;
+      }
+
+      .empty-state p {
+        font-size: 18px;
+        margin-bottom: 24px;
       }
     </style>
   </head>
   <body>
     <div class="navbar">
-      <h1>Gestionale</h1>
-      <div>
+      <div class="navbar-left">
+        <h1>📁 Gestionale Files</h1>
+      </div>
+      <div class="navbar-right">
         {% if admin %}
-        <a href="{{ url_for('manage_users') }}">Gestione utenti</a>
-        &nbsp;|&nbsp; {% endif %}
+        <a href="{{ url_for('manage_users') }}">👥 Gestione utenti</a>
+        {% endif %}
         <a href="{{ url_for('logout') }}">Logout</a>
       </div>
     </div>
 
-    <div class="container" id="container">
-      {% for folder in folders %}
-      <div class="folder" data-folder="{{ folder }}">{{ folder }}</div>
-      {% endfor %}
+    <div class="container">
+      <div class="welcome-section">
+        <h2>👋 Benvenuto!</h2>
+        <p>Gestisci i tuoi file e cartelle in modo semplice e intuitivo</p>
+      </div>
+
+      <div class="toolbar">
+        <button class="btn btn-primary" id="create-folder-btn">
+          📁 Nuova Cartella
+        </button>
+      </div>
+
+      <div class="folders-grid" id="folders-grid">
+        {% for folder in folders %}
+        <div class="folder-item" data-name="{{ folder }}">
+          <span class="folder-icon">📁</span>
+          <div class="folder-name">{{ folder }}</div>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% if not folders %}
+      <div class="empty-state">
+        <div class="empty-state-icon">📂</div>
+        <p>Nessuna cartella presente</p>
+        <button
+          class="btn btn-primary"
+          onclick="document.getElementById('create-folder-btn').click()"
+        >
+          Crea la tua prima cartella
+        </button>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="context-menu" id="context-menu">
+      <div id="menu-open">📂 Apri</div>
+      <div id="menu-rename">✏️ Rinomina</div>
+      <div id="menu-delete">🗑️ Elimina</div>
+    </div>
+
+    <div class="context-menu" id="context-menu-empty">
+      <div id="menu-create-folder">📁 Nuova Cartella</div>
     </div>
 
     <script>
-      const container = document.getElementById("container");
+      const foldersGrid = document.getElementById("folders-grid");
+      const contextMenu = document.getElementById("context-menu");
+      const contextMenuEmpty = document.getElementById("context-menu-empty");
+      let selectedFolder = null;
 
-      // Doppio click entra nella cartella
-      container.addEventListener("dblclick", (e) => {
-        if (e.target.classList.contains("folder")) {
-          window.location.href = `/folder/${encodeURIComponent(
-            e.target.dataset.folder
-          )}`;
+      // CREA CARTELLA - senza popup
+      document
+        .getElementById("create-folder-btn")
+        .addEventListener("click", createFolder);
+      document
+        .getElementById("menu-create-folder")
+        .addEventListener("click", createFolder);
+
+      function createFolder() {
+        hideMenus();
+        const newFolder = document.createElement("div");
+        newFolder.className = "folder-item";
+        newFolder.innerHTML = `
+          <span class="folder-icon">📁</span>
+          <input type="text" class="folder-input" placeholder="Nome cartella" style="width: 100%; background: rgba(255,255,255,0.2); border: 2px solid #667eea; border-radius: 8px; padding: 8px; color: white; text-align: center; font-size: 14px; font-weight: 600;" autofocus />
+        `;
+        foldersGrid.prepend(newFolder);
+        const input = newFolder.querySelector("input");
+        input.focus();
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            const name = input.value.trim();
+            if (name) {
+              fetch("/create_folder", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/x-www-form-urlencoded",
+                },
+                body: `folder_name=${encodeURIComponent(name)}`,
+              }).then(() => location.reload());
+            } else newFolder.remove();
+          } else if (e.key === "Escape") newFolder.remove();
+        });
+        input.addEventListener("blur", () =>
+          setTimeout(() => newFolder.remove(), 200)
+        );
+      }
+
+      // CONTEXT MENU
+      document.addEventListener("contextmenu", (e) => {
+        e.preventDefault();
+        hideMenus();
+        const folderItem = e.target.closest(".folder-item");
+        if (folderItem) {
+          selectedFolder = folderItem;
+          contextMenu.style.top = e.pageY + "px";
+          contextMenu.style.left = e.pageX + "px";
+          contextMenu.style.display = "flex";
+        } else if (e.target.closest(".container")) {
+          contextMenuEmpty.style.top = e.pageY + "px";
+          contextMenuEmpty.style.left = e.pageX + "px";
+          contextMenuEmpty.style.display = "flex";
         }
+      });
+
+      function hideMenus() {
+        contextMenu.style.display = "none";
+        contextMenuEmpty.style.display = "none";
+      }
+
+      document.addEventListener("click", hideMenus);
+
+      // DOPPIO CLICK
+      foldersGrid.addEventListener("dblclick", (e) => {
+        const item = e.target.closest(".folder-item");
+        if (!item) return;
+        window.location.href = `/folder/${encodeURIComponent(
+          item.dataset.name
+        )}`;
+      });
+
+      // APRI
+      document.getElementById("menu-open").addEventListener("click", () => {
+        if (!selectedFolder) return;
+        hideMenus();
+        window.location.href = `/folder/${encodeURIComponent(
+          selectedFolder.dataset.name
+        )}`;
+      });
+
+      // RINOMINA - senza popup
+      document.getElementById("menu-rename").addEventListener("click", () => {
+        if (!selectedFolder) return;
+        hideMenus();
+        const oldName = selectedFolder.dataset.name;
+        const nameDiv = selectedFolder.querySelector(".folder-name");
+        nameDiv.innerHTML = `<input type="text" value="${oldName}" style="width: 100%; background: rgba(255,255,255,0.2); border: 2px solid #667eea; border-radius: 8px; padding: 6px; color: white; text-align: center; font-size: 14px; font-weight: 600;" />`;
+        const input = nameDiv.querySelector("input");
+        input.focus();
+        input.select();
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            const newName = input.value.trim();
+            if (newName && newName !== oldName) {
+              fetch("/rename_folder", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/x-www-form-urlencoded",
+                },
+                body: `folder_path=&old_name=${encodeURIComponent(
+                  oldName
+                )}&new_name=${encodeURIComponent(newName)}`,
+              }).then(() => location.reload());
+            } else nameDiv.textContent = oldName;
+          } else if (e.key === "Escape") nameDiv.textContent = oldName;
+        });
+        input.addEventListener("blur", () =>
+          setTimeout(() => {
+            if (nameDiv.contains(input)) nameDiv.textContent = oldName;
+          }, 200)
+        );
+      });
+
+      // ELIMINA - senza popup
+      document.getElementById("menu-delete").addEventListener("click", () => {
+        if (!selectedFolder) return;
+        hideMenus();
+        selectedFolder.style.opacity = "0.3";
+        selectedFolder.style.transform = "scale(0.8)";
+        fetch("/delete_folder", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: `folder_path=&folder_name=${encodeURIComponent(
+            selectedFolder.dataset.name
+          )}`,
+        }).then(() => selectedFolder.remove());
       });
     </script>
   </body>

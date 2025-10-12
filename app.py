@@ -65,6 +65,7 @@ def logout():
 @app.route('/files')
 @login_required
 def index():
+    # Lista solo le cartelle nella vista principale
     folders = [f for f in os.listdir(UPLOAD_FOLDER) if os.path.isdir(os.path.join(UPLOAD_FOLDER, f))]
     return render_template('index.html', folders=folders, admin=session.get('is_admin', False))
 
@@ -90,7 +91,7 @@ def view_folder(folder_path):
             'type': 'folder' if os.path.isdir(path) else 'file'
         })
 
-    return render_template('folder.html', items=items, current_path=folder_path)
+    return render_template('folder.html', items=items, current_path=folder_path, admin=session.get('is_admin', False))
 
 # --- CREATE / RENAME / DELETE ---
 @app.route('/create_folder', defaults={'folder_path':''}, methods=['POST'])
@@ -103,6 +104,7 @@ def create_folder(folder_path):
         os.makedirs(path, exist_ok=True)
     return ('',204)
 
+@app.route('/rename_folder', defaults={'folder_path':''}, methods=['POST'])
 @app.route('/rename_folder/<path:folder_path>', methods=['POST'])
 @login_required
 def rename_folder(folder_path):
@@ -114,6 +116,7 @@ def rename_folder(folder_path):
         os.rename(old_path, new_path)
     return ('',204)
 
+@app.route('/delete_folder', defaults={'folder_path':''}, methods=['POST'])
 @app.route('/delete_folder/<path:folder_path>', methods=['POST'])
 @login_required
 def delete_folder(folder_path):
@@ -123,6 +126,7 @@ def delete_folder(folder_path):
         shutil.rmtree(path)
     return ('',204)
 
+@app.route('/rename_file', defaults={'folder_path':''}, methods=['POST'])
 @app.route('/rename_file/<path:folder_path>', methods=['POST'])
 @login_required
 def rename_file(folder_path):
@@ -136,6 +140,7 @@ def rename_file(folder_path):
         return ('',204)
     return ('File non valido', 400)
 
+@app.route('/delete_file', defaults={'folder_path':''}, methods=['POST'])
 @app.route('/delete_file/<path:folder_path>', methods=['POST'])
 @login_required
 def delete_file(folder_path):
@@ -149,6 +154,14 @@ def delete_file(folder_path):
 @login_required
 def uploaded_file(file_path):
     folder_path, filename = os.path.split(file_path)
+    # Non forzare il download - permetti visualizzazione inline
+    return send_from_directory(os.path.join(UPLOAD_FOLDER, folder_path), filename)
+
+@app.route('/download/<path:file_path>')
+@login_required
+def download_file(file_path):
+    folder_path, filename = os.path.split(file_path)
+    # Forza il download
     return send_from_directory(os.path.join(UPLOAD_FOLDER, folder_path), filename, as_attachment=True)
 
 # --- ADMIN USER MANAGEMENT ---
@@ -176,8 +189,12 @@ def create_user():
         conn = sqlite3.connect('users.db')
         c = conn.cursor()
         password_hash = generate_password_hash(password)
-        c.execute('INSERT INTO users (username,password_hash,is_admin) VALUES (?,?,0)', (username,password_hash))
-        conn.commit()
+        try:
+            c.execute('INSERT INTO users (username,password_hash,is_admin) VALUES (?,?,0)', (username,password_hash))
+            conn.commit()
+        except sqlite3.IntegrityError:
+            conn.close()
+            return ('Username già esistente', 400)
         conn.close()
     return redirect(url_for('manage_users'))
 
