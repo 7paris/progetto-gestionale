@@ -1,4 +1,38 @@
-align-items: center;
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestionale - Home</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        min-height: 100vh;
+        color: #fff;
+      }
+
+      .navbar {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        padding: 16px 32px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+      }
+
+      .navbar-left {
+        display: flex;
+        align-items: center;
         gap: 16px;
       }
 
@@ -266,10 +300,12 @@ align-items: center;
     {% endif %}
 
     <script>
-      const isAdmin = document.body.getAttribute('data-admin') === 'True';
+      const isAdmin = document.body.getAttribute("data-admin") === "True";
       const foldersGrid = document.getElementById("folders-grid");
       const contextMenu = document.getElementById("context-menu");
-      const contextMenuEmpty = isAdmin ? document.getElementById("context-menu-empty") : null;
+      const contextMenuEmpty = isAdmin
+        ? document.getElementById("context-menu-empty")
+        : null;
       let selectedFolder = null;
 
       // CREA CARTELLA - senza popup
@@ -326,7 +362,11 @@ align-items: center;
           contextMenu.style.top = e.pageY + "px";
           contextMenu.style.left = e.pageX + "px";
           contextMenu.style.display = "flex";
-        } else if (isAdmin && contextMenuEmpty && e.target.closest(".container")) {
+        } else if (
+          isAdmin &&
+          contextMenuEmpty &&
+          e.target.closest(".container")
+        ) {
           contextMenuEmpty.style.top = e.pageY + "px";
           contextMenuEmpty.style.left = e.pageX + "px";
           contextMenuEmpty.style.display = "flex";
